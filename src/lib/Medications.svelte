@@ -4,6 +4,7 @@
 	import { fly, slide } from 'svelte/transition';
 	import type { Medication } from '../app';
 	import MedicationDropdown from './MedicationDropdown.svelte';
+	import { addMedication } from './models/medication';
 	import { trpc } from './trpc/client';
 
 	export let medications: Writable<Medication[]>;
@@ -21,15 +22,17 @@
 
 		const quantity = parseInt(quantityStr);
 		if (isNaN(quantity)) return errorFields.push('quantity');
+		medications.update((meds) =>
+			addMedication(
+				{
+					name,
+					quantityRemaining: { value: quantity, unit: 'g' },
+					initialQuantity: { value: quantity, unit: 'g' }
+				},
+				meds
+			)
+		);
 
-		medications.update((meds) => [
-			...meds,
-			{
-				name,
-				initialQuantity: { value: quantity, unit: 'g' },
-				quantityRemaining: { value: quantity, unit: 'g' }
-			}
-		]);
 		if (shouldUpdateServer) {
 			trpc().addMedication.mutate({
 				name,
@@ -38,7 +41,11 @@
 		}
 		state = 'list';
 	}
-	$: maximum = $medications.reduce((acc, curr) => Math.max(acc, curr.initialQuantity.value), 0);
+	$: maximum = $medications.reduce(
+		(acc, curr) =>
+			Math.max(acc, Math.max(curr.initialQuantity.value, curr.quantityRemaining.value)),
+		0
+	);
 	$: console.log(maximum);
 	let errorFields: Array<'name' | 'quantity'> = [];
 	let formEl: HTMLFormElement;
@@ -60,12 +67,22 @@
 						<div class="col-span-full my-2 text-left ">
 							<div
 								class=" w-full"
-								style={`width: ${(100 * medication.initialQuantity.value) / maximum}%`}
+								style={`width: ${
+									(100 *
+										Math.max(
+											medication.initialQuantity.value,
+											medication.quantityRemaining.value
+										)) /
+									maximum
+								}%`}
 							>
 								<ProgressBar
 									value={medication.quantityRemaining.value}
 									meter="bg-primary-400-500-token transition-[width]"
-									max={medication.initialQuantity.value}
+									max={Math.max(
+										medication.initialQuantity.value,
+										medication.quantityRemaining.value
+									)}
 								/>
 							</div>
 						</div>

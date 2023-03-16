@@ -1,4 +1,4 @@
-import { consumeMedicine } from '$lib/models/consumeMedicine';
+import { addMedication, consumeMedicine } from '$lib/models/medication';
 import type { Context } from '$lib/trpc/context';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
@@ -132,8 +132,7 @@ export const router = t.router({
 				quantityRemaining: { value: input.quantity, unit: 'g' }
 			};
 			const meds = await getMedications(ctx.user.sub, ctx.platform);
-			meds.push(parsedInput);
-			await putMedications(ctx.user.sub, meds, ctx.platform);
+			await putMedications(ctx.user.sub, addMedication(parsedInput, meds), ctx.platform);
 		}),
 	doses: loggedInProcedure.query(async ({ ctx }): Promise<Dose[]> => {
 		return await getDoses(ctx.user.sub, ctx.platform);

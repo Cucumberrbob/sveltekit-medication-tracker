@@ -18,3 +18,13 @@ export function consumeMedicine(medications: Medication[], dose: Dose): Medicati
 		.map((m, i) => (i === medicationToConsumeIndex ? medicationToConsume : m))
 		.filter((m) => m.quantityRemaining.value > 0);
 }
+
+export function addMedication(medication: Medication, medications: Medication[]) {
+	const existingMedication = medications.find((m) => m.name === medication.name);
+	if (existingMedication) {
+		existingMedication.initialQuantity.value = medication.initialQuantity.value;
+		existingMedication.quantityRemaining.value += medication.initialQuantity.value;
+		return [...medications.filter((m) => m.name !== medication.name), existingMedication];
+	}
+	return [...medications, medication];
+}

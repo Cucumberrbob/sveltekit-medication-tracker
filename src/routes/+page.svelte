@@ -4,7 +4,7 @@
 	import { PUBLIC_AUTH0_CLIENT_ID, PUBLIC_AUTH0_DOMAIN } from '$env/static/public';
 	import DoseTracker from '$lib/DoseTracker.svelte';
 	import Medications from '$lib/Medications.svelte';
-	import { consumeMedicine } from '$lib/models/consumeMedicine';
+	import { consumeMedicine } from '$lib/models/medication';
 	import { safeDate } from '$lib/models/safeDateTime';
 	import { localStorageOptIn } from '$lib/stores/localStorageOptIn';
 	import { medications as localMedicationsStore } from '$lib/stores/medications';
