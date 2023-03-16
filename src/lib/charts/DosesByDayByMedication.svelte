@@ -17,7 +17,6 @@
 	Chart.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 	export let doses: Dose[];
-	console.log(doses);
 	export let daysToShow: number;
 	function calculateData(doses: Dose[], daysToShow: number) {
 		const earliestDose = doses.reduce((acc, dose) => {
@@ -62,7 +61,6 @@
 			},
 			{} as Record<string, Record<string, Dose[]>>
 		);
-		console.log(dosesByMedicineByDay);
 		return {
 			labels: days,
 			datasets: Object.entries(dosesByMedicineByDay).map(([medicine, dosesByDay], i) => ({
@@ -78,7 +76,6 @@
 
 	let data: ChartData<'bar', (number | [number, number])[], unknown>;
 	$: data = calculateData(doses, daysToShow);
-	console.log(data);
 </script>
 
 <Bar

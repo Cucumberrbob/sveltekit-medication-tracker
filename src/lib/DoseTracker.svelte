@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { error } from '@sveltejs/kit';
 	import { createEventDispatcher } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import type { Dose, Medication, QuickLog } from '../app';
+	import type { Dose, Medication } from '../app';
 	import MedicationDropdown from './MedicationDropdown.svelte';
+
 	export let medications: Writable<Medication[]>;
 
 	const dispatch = createEventDispatcher();
@@ -35,21 +35,13 @@
 </script>
 
 <form
-	class="card p-4 space-y-2 w-96 max-md:w-full max-md:row-start-1  flex flex-col justify-items-stretch"
+	class="card p-4 space-y-2 w-96 max-md:w-full max-md:row-start-1 flex flex-col justify-items-stretch shadow-2xl"
 	bind:this={formEl}
 	on:submit|preventDefault={handleAddDose}
 >
 	<span class="text-xl">Log a dose</span>
 	<label for="name">
 		<span>Medication Name</span>
-		<!-- <input
-			type="text"
-			placeholder="Enter Medication Name..."
-			class="input"
-			on:input={() => (errorFields = errorFields.filter((f) => f !== 'name'))}
-			class:input-error={errorFields.includes('name')}
-			name="name"
-		/> -->
 		<MedicationDropdown options={$medications} name="name" selected={undefined} />
 	</label>
 	<label for="quantity">

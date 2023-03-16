@@ -150,7 +150,6 @@
 			closeQuery: 'li[role="option"]'
 		}}
 	/>
-
 	<ul
 		role="combobox"
 		data-popup={name}
@@ -158,21 +157,18 @@
 		aria-controls={name}
 		class="select-menu {classesMenu}"
 	>
-		{#each filteredOptions as option, i (option.name)}
-			<!-- svelte-ignore a11y-click-events-have-key-events since this element cannot be focussed by the keyboard-->
-			<li
-				role="option"
-				aria-selected={selected === option}
-				class="select-option {classesOption} {i === focusIndex ? classesOptionFocus : ''}"
-				on:click={() => setSelected(option)}
-			>
-				{option.name}
-			</li>
-		{/each}
-		{#if filteredOptions.length === 0}
-			<slot name="no-results">
-				<span class="no-results opacity-50"> No results found </span>
-			</slot>
+		{#if filteredOptions.length > 0}
+			{#each filteredOptions as option, i (option.name)}
+				<!-- svelte-ignore a11y-click-events-have-key-events since this element cannot be focussed by the keyboard-->
+				<li
+					role="option"
+					aria-selected={selected === option}
+					class="select-option {classesOption} {i === focusIndex ? classesOptionFocus : ''}"
+					on:click={() => setSelected(option)}
+				>
+					{option.name}
+				</li>
+			{/each}
 		{/if}
 	</ul>
 </div>
