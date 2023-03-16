@@ -14,7 +14,7 @@ export const handleAuth: Handle = async ({ event, resolve }) => {
 	const cookie = event.cookies.get('auth0');
 	if (cookie) {
 		if (!jsonwebtoken.verify(cookie, JWT_PRIVATE_KEY)) {
-			event.cookies.set('auth0', '', { path: '/' });
+			event.cookies.set('auth0', '', { path: '/', expires: new Date(0) });
 			throw error(403, 'jwt invalid');
 		}
 		event.locals.idToken = (jsonwebtoken.decode(cookie).payload as { idToken: IdToken }).idToken;
@@ -28,5 +28,12 @@ export const handleAuth: Handle = async ({ event, resolve }) => {
 };
 
 export const handleTrpc: Handle = createTRPCHandle({ router, createContext });
-
-export const handle = sequence(handleAuth, handleTrpc);
+const setNoCacheHeaders: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	response.headers.set(
+		'Cache-Control',
+		'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+	);
+	return response;
+};
+export const handle = sequence(handleAuth, handleTrpc, setNoCacheHeaders);
