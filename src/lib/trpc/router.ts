@@ -1,9 +1,9 @@
+import { consumeMedicine } from '$lib/models/consumeMedicine';
 import type { Context } from '$lib/trpc/context';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { Dose, IdToken, Medication, Quantity } from '../../app';
-import { z } from 'zod';
-import { consumeMedicine } from '$lib/models/consumeMedicine';
 import superjson from 'superjson';
+import { z } from 'zod';
+import type { Dose, IdToken, Medication, Quantity } from '../../app';
 export const t = initTRPC.context<Context>().create({ transformer: superjson });
 
 export const loggedInProcedure = t.procedure.use(
@@ -43,41 +43,80 @@ function validateMedication(meds: unknown): meds is Medication[] {
 		})
 	);
 }
-function safeParseDoseDate(doses: unknown): Dose[] | null {
-	const result: Dose[] = [];
+
+function parseDoseData(doses: unknown): Dose[] {
 	if (!Array.isArray(doses)) {
-		return null;
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
 	}
+	const result: Dose[] = [];
 	for (const dose of doses) {
-		if (!(typeof dose === 'object' && dose)) return null;
-
-		if (!('dateTime' in dose && typeof dose.dateTime === 'string')) return null;
-		const parsedDate = new Date(dose.dateTime);
-		if (isNaN(parsedDate.getTime())) return null;
-
-		if (!('quantity' in dose && validateQuantity(dose.quantity))) return null;
-		if (!('medicationName' in dose && typeof dose.medicationName === 'string')) return null;
+		if (!Array.isArray(dose)) {
+			throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+		}
+		if (dose.length < 3) {
+			throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+		}
+		const [medicationName, quantity, dateTime] = dose;
+		if (
+			typeof medicationName !== 'string' ||
+			typeof quantity !== 'number' ||
+			typeof dateTime !== 'number'
+		) {
+			throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+		}
 		result.push({
-			medicationName: dose.medicationName,
-			quantity: dose.quantity,
-			dateTime: parsedDate
+			medicationName,
+			quantity: { value: quantity, unit: 'g' },
+			dateTime: new Date(dateTime)
 		});
 	}
 	return result;
 }
 
+async function getDoses(sub: string, platform?: App.Platform) {
+	if (!platform) {
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KV bindings not found' });
+	}
+	const dosesRaw = await platform.env.USER_DOSES.get(sub);
+	if (!dosesRaw) {
+		return [];
+	}
+	return parseDoseData(JSON.parse(dosesRaw));
+}
+async function putDoses(sub: string, doses: Dose[], platform?: App.Platform) {
+	if (!platform) {
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KV bindings not found' });
+	}
+	await platform.env.USER_DOSES.put(
+		sub,
+		JSON.stringify(doses.map((d) => [d.medicationName, d.quantity.value, +d.dateTime]))
+	);
+}
+
+async function getMedications(sub: string, platform?: App.Platform) {
+	if (!platform) {
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KV bindings not found' });
+	}
+	const medsRaw = await platform.env.USER_MEDICATIONS.get(sub);
+	if (!medsRaw) {
+		return [];
+	}
+	const meds = JSON.parse(medsRaw);
+	if (!validateMedication(meds)) {
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+	}
+	return meds;
+}
+async function putMedications(sub: string, meds: Medication[], platform?: App.Platform) {
+	if (!platform) {
+		throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'KV bindings not found' });
+	}
+	await platform.env.USER_MEDICATIONS.put(sub, JSON.stringify(meds));
+}
+
 export const router = t.router({
 	medications: loggedInProcedure.query(async ({ ctx }): Promise<Medication[]> => {
-		const result = await ctx.platform?.env.USER_MEDICATIONS.get(ctx.user.sub);
-		if (result) {
-			const meds = JSON.parse(result);
-			if (validateMedication(meds)) {
-				return meds;
-			} else {
-				throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-			}
-		}
-		return [];
+		return await getMedications(ctx.user.sub, ctx.platform);
 	}),
 	addMedication: loggedInProcedure
 		.input(
@@ -92,33 +131,12 @@ export const router = t.router({
 				initialQuantity: { value: input.quantity, unit: 'g' },
 				quantityRemaining: { value: input.quantity, unit: 'g' }
 			};
-			const meds = await ctx.platform?.env.USER_MEDICATIONS.get(ctx.user.sub);
-			if (meds) {
-				const medsArray = JSON.parse(meds);
-				if (!validateMedication(medsArray)) {
-					throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-				}
-				medsArray.push(parsedInput);
-				await ctx.platform?.env.USER_MEDICATIONS.put(ctx.user.sub, JSON.stringify(medsArray));
-			} else {
-				await ctx.platform?.env.USER_MEDICATIONS.put(ctx.user.sub, JSON.stringify([parsedInput]));
-			}
+			const meds = await getMedications(ctx.user.sub, ctx.platform);
+			meds.push(parsedInput);
+			await putMedications(ctx.user.sub, meds, ctx.platform);
 		}),
 	doses: loggedInProcedure.query(async ({ ctx }): Promise<Dose[]> => {
-		const doses = await ctx.platform?.env.USER_DOSES.get(ctx.user.sub);
-		if (doses) {
-			const dosesRaw = JSON.parse(doses);
-			if (!dosesRaw) {
-				return [];
-			}
-			const dosesArray = safeParseDoseDate(dosesRaw);
-			if (dosesArray) {
-				return dosesArray;
-			} else {
-				throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-			}
-		}
-		return [];
+		return await getDoses(ctx.user.sub, ctx.platform);
 	}),
 	addDose: loggedInProcedure
 		.input(
@@ -129,26 +147,19 @@ export const router = t.router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const meds = await ctx.platform?.env.USER_MEDICATIONS.get(ctx.user.sub);
-			if (meds) {
-				let medsArray = JSON.parse(meds);
-				if (!validateMedication(medsArray)) {
-					throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-				}
-				medsArray = consumeMedicine(medsArray, input);
-				await ctx.platform?.env.USER_MEDICATIONS.put(ctx.user.sub, JSON.stringify(medsArray));
+			const meds = consumeMedicine(await getMedications(ctx.user.sub, ctx.platform), input);
+			await putMedications(ctx.user.sub, meds, ctx.platform);
 
-				const dosesRaw = await ctx.platform?.env.USER_DOSES.get(ctx.user.sub);
-				const doses = safeParseDoseDate(JSON.parse(dosesRaw || '[]')) || [];
-
-				if (doses) {
-					doses.push(input);
-					await ctx.platform?.env.USER_DOSES.put(ctx.user.sub, JSON.stringify(doses));
-				} else {
-					throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-				}
-			}
-		})
+			const doses = await getDoses(ctx.user.sub, ctx.platform);
+			doses.push(input);
+			await putDoses(ctx.user.sub, doses, ctx.platform);
+		}),
+	deleteAllData: loggedInProcedure.mutation(async ({ ctx }) => {
+		await Promise.all([
+			ctx.platform?.env.USER_DOSES.delete(ctx.user.sub),
+			ctx.platform?.env.USER_MEDICATIONS.delete(ctx.user.sub)
+		]);
+	})
 });
 
 export type Router = typeof router;

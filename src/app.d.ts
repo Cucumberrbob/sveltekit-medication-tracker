@@ -51,8 +51,5 @@ type Dose = {
 	quantity: Quantity;
 	medicationName: string;
 };
-type QuickLog = {
-	medicationName: string;
-	quantity: Quantity;
-	name: string;
-};
+/** [medicationName, quantity.value in grams, unix time] */
+type ServerDose = [string, number, number]
