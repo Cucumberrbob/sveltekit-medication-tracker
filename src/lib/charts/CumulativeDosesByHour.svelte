@@ -43,14 +43,14 @@
 			if (dose.dateTime < cutoffTime) {
 				return acc;
 			}
-			const date = dose.dateTime.toISOString().split('T')[0];
+			const date = new Date(+dose.dateTime - 7 * 3_600_000).toISOString().split('T')[0];
 			if (!acc[date]) {
 				acc[date] = [];
 			}
 			acc[date].push(dose);
 			return acc;
 		}, {} as Record<string, Dose[]>);
-		// the total amount consumed per day is the sum of the doses taken at that time
+
 		const cumulativeDosesByDay = Object.entries(dosesByDay).reduce((acc, [date, doses]) => {
 			let runningTotal = 0;
 			acc[date] = doses.map((dose) => {
@@ -62,6 +62,7 @@
 			});
 			return acc;
 		}, {} as Record<string, (Dose & { runningTotal: number })[]>);
+
 		const datasets: ChartData<'scatter', (number | Point)[], unknown>['datasets'] = days
 			.map(
 				(
@@ -70,11 +71,12 @@
 				): ChartData<'scatter', (number | Point)[], unknown>['datasets'][number] | undefined => {
 					const doses = cumulativeDosesByDay[day];
 					if (!doses) return;
+					const dayStartTime = new Date(+new Date(day) + 7 * 3_600_000);
 					return {
 						label: day,
 						data: doses.map((dose) => {
 							return {
-								x: dose.dateTime.getHours() * 60 + dose.dateTime.getMinutes(),
+								x: +dose.dateTime - +dayStartTime,
 								y: dose.runningTotal
 							};
 						}),
@@ -96,7 +98,7 @@
 			labels: days.filter((d) => !!cumulativeDosesByDay[d]),
 			datasets
 		};
-		console.log(data);
+		// console.log(data);
 		return data;
 	}
 	$: data = calculateData(doses, daysToShow);
@@ -106,11 +108,19 @@
 	{data}
 	options={{
 		responsive: true,
-		elements: { line: { fill: '#fff' } },
 		plugins: {
 			tooltip: {
 				callbacks: {
-					label: (item) => `${item.dataset.label} Total ${item.parsed.y.toFixed(2)}g`
+					label: (item) => [
+						`${item.dataset.label}, ${new Date(item.parsed.x + 7 * 3_600_000).toLocaleTimeString(
+							[],
+							{
+								hour: '2-digit',
+								minute: '2-digit'
+							}
+						)}`,
+						` Total ${item.parsed.y.toFixed(2)}g`
+					]
 				}
 			}
 		},
@@ -119,7 +129,7 @@
 				ticks: {
 					callback(tickValue) {
 						const timeOnlyDate = new Date(
-							(typeof tickValue === 'string' ? parseInt(tickValue) : tickValue) * 60 * 1000
+							(typeof tickValue === 'string' ? parseInt(tickValue) : tickValue) + 7 * 3_600_000
 						);
 						return timeOnlyDate.toLocaleTimeString([], {
 							hour: '2-digit',
