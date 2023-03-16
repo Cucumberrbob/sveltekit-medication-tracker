@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { localStorageOptIn } from '$lib/stores/localStorageOptIn';
 	import { trpc } from '$lib/trpc/client';
 	import { modalStore } from '@skeletonlabs/skeleton';
 	import type { PageData } from './$types';
@@ -69,18 +70,17 @@
 				currently does not have functionality to process any data, but we may add the option in the
 				future. We will never sell your data to third parties.
 			</p>
-
-			<p>
-				You can request that all your data is deleted by clicking on your username in the top right.
-				In local mode, this is where the login button would be.
-			</p>
 			<div class="flex w-full max-sm:flex-col max-sm:space-y-4 justify-between">
-				<button class="btn variant-ghost-error" on:click={deleteAllData}>
-					Delete all your data
-				</button>
-				<button class="btn variant-filled-primary" on:click={download}>
-					Download all your data
-				</button>
+				{#if data.idToken}
+					<button class="btn variant-ghost-error" on:click={deleteAllData}>
+						Delete all your data
+					</button>
+				{/if}
+				{#if data.idToken || $localStorageOptIn}
+					<button class="btn variant-filled-primary" on:click={download}>
+						Download all your data
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
