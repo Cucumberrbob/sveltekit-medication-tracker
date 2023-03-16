@@ -10,7 +10,7 @@ export function consumeMedicine(medications: Medication[], dose: Dose): Medicati
 
 	if (!medicationToConsume) throw new Error('Medication to consume not found');
 	const newQuantity = Math.max(
-		medicationToConsume.quantityRemaining.value - dose.quantity.value,
+		Math.round(100 * (medicationToConsume.quantityRemaining.value - dose.quantity.value)) / 100,
 		0
 	);
 	medicationToConsume.quantityRemaining.value = newQuantity;
