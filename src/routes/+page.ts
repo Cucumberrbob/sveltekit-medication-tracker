@@ -10,6 +10,7 @@ export const load: PageLoad = async ({ parent, fetch, url }) => {
 		return { medications, doses };
 	} else {
 		if ((await parent()).idToken) {
+			localStorageOptIn.set(false);
 			const trpcClient = trpc({ fetch, url });
 			const [meds, doses] = await Promise.all([
 				trpcClient.medications.query(),
