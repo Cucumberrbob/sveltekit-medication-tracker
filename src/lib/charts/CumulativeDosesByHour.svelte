@@ -110,16 +110,37 @@
 		plugins: {
 			tooltip: {
 				callbacks: {
-					label: (item) => [
-						`${item.dataset.label}, ${new Date(item.parsed.x + 7 * 3_600_000).toLocaleTimeString(
-							'en-gb',
-							{
-								hour: '2-digit',
-								minute: '2-digit'
-							}
-						)}`,
-						` Total ${item.parsed.y.toFixed(2)}g`
-					]
+					label: (item) => {
+						const lastPointInDataset = item.chart.data.datasets.find(
+							(d) => d.label === item.dataset.label
+						)?.data[item.dataIndex - 1];
+						if (
+							!lastPointInDataset ||
+							!(typeof lastPointInDataset === 'object' && 'y' in lastPointInDataset)
+						) {
+							return [
+								`${item.dataset.label}, ${new Date(
+									item.parsed.x + 6 * 3_600_000
+								).toLocaleTimeString('en-gb', {
+									hour: '2-digit',
+									minute: '2-digit'
+								})}`,
+								`Consumed ${item.parsed.y.toFixed(2)}g`
+							];
+						}
+						return [
+							`${item.dataset.label}, ${new Date(item.parsed.x + 6 * 3_600_000).toLocaleTimeString(
+								'en-gb',
+								{
+									hour: '2-digit',
+									minute: '2-digit'
+								}
+							)}`,
+							`Consumed ${(item.parsed.y - lastPointInDataset.y).toFixed(
+								2
+							)}g - Total ${item.parsed.y.toFixed(2)}g`
+						];
+					}
 				}
 			}
 		},
