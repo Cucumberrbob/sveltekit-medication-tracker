@@ -47,9 +47,10 @@ type Medication = {
 	initialQuantity: Quantity;
 };
 type Dose = {
-	dateTime: Date;
+	//since we use localStorage, it will be read back as a string sometimes
+	dateTime: Date | string;
 	quantity: Quantity;
 	medicationName: string;
 };
 /** [medicationName, quantity.value in grams, unix time] */
-type ServerDose = [string, number, number]
+type ServerDose = [string, number, number];

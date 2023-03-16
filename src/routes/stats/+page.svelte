@@ -3,7 +3,6 @@
 	import CumulativeDosesByMedication from '$lib/charts/CumulativeDosesByMedication.svelte';
 	import DosesByDayByMedicine from '$lib/charts/DosesByDayByMedication.svelte';
 	import { localStorageOptIn } from '$lib/stores/localStorageOptIn';
-	import { createDataTableStore } from '@skeletonlabs/skeleton';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -16,7 +15,7 @@
 	];
 	const chartOptions = [
 		{ name: 'byDayByMedication', label: 'By Day by Medication' },
-		{ name: 'cumulative', label: 'Cumulative' },
+		{ name: 'cumulative', label: 'Daily' },
 		{ name: 'cumulativeMedication', label: 'Cumulative by Medication' },
 		{ name: 'scatter', label: 'Scatter (Coming Soon)', disabled: true }
 	];

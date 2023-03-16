@@ -15,16 +15,16 @@
 		type ChartData,
 		type Point
 	} from 'chart.js';
+	import { safeDate } from '$lib/models/safeDateTime';
 
 	Chart.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement);
 
 	export let doses: Dose[];
 	export let daysToShow: number;
-
 	function calculateData(doses: Dose[], daysToShow: number) {
 		const earliestDose = doses.reduce((acc, dose) => {
 			if (dose.dateTime < acc) {
-				return dose.dateTime;
+				return safeDate(dose.dateTime);
 			}
 			return acc;
 		}, new Date());
@@ -43,7 +43,7 @@
 			if (dose.dateTime < cutoffTime) {
 				return acc;
 			}
-			const date = new Date(+dose.dateTime - 7 * 3_600_000).toISOString().split('T')[0];
+			const date = new Date(+safeDate(dose.dateTime) - 7 * 3_600_000).toISOString().split('T')[0];
 			if (!acc[date]) {
 				acc[date] = [];
 			}
@@ -76,7 +76,7 @@
 						label: day,
 						data: doses.map((dose) => {
 							return {
-								x: +dose.dateTime - +dayStartTime,
+								x: +safeDate(dose.dateTime) - +dayStartTime,
 								y: dose.runningTotal
 							};
 						}),
@@ -98,7 +98,6 @@
 			labels: days.filter((d) => !!cumulativeDosesByDay[d]),
 			datasets
 		};
-		// console.log(data);
 		return data;
 	}
 	$: data = calculateData(doses, daysToShow);
@@ -113,7 +112,7 @@
 				callbacks: {
 					label: (item) => [
 						`${item.dataset.label}, ${new Date(item.parsed.x + 7 * 3_600_000).toLocaleTimeString(
-							[],
+							'en-gb',
 							{
 								hour: '2-digit',
 								minute: '2-digit'
@@ -131,7 +130,7 @@
 						const timeOnlyDate = new Date(
 							(typeof tickValue === 'string' ? parseInt(tickValue) : tickValue) + 7 * 3_600_000
 						);
-						return timeOnlyDate.toLocaleTimeString([], {
+						return timeOnlyDate.toLocaleTimeString('en-gb', {
 							hour: '2-digit',
 							minute: '2-digit'
 						});

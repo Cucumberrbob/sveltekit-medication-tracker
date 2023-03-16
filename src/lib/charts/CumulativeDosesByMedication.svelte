@@ -16,6 +16,7 @@
 		type Point
 	} from 'chart.js';
 	import { Scatter } from 'svelte-chartjs';
+	import { safeDate } from '$lib/models/safeDateTime';
 
 	Chart.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement);
 
@@ -56,7 +57,7 @@
 			datasets: Object.entries(cumulativeDosesByMedication).map(([medicationName, doses], i) => ({
 				label: medicationName,
 				data: doses.map((dose) => ({
-					x: +dose.dateTime,
+					x: +safeDate(dose.dateTime),
 					y: dose.runningTotal
 				})),
 				borderWidth: 1,
@@ -99,7 +100,7 @@
 							];
 						}
 						return [
-							`${item.dataset.label}, ${new Date(item.parsed.x).toLocaleString([], {
+							`${item.dataset.label}, ${new Date(item.parsed.x).toLocaleString('en-gb', {
 								month: 'short',
 								day: 'numeric',
 								hour: '2-digit',
@@ -117,7 +118,10 @@
 			x: {
 				ticks: {
 					callback(tickValue) {
-						return new Date(tickValue).toLocaleDateString([], { month: 'short', day: 'numeric' });
+						return new Date(tickValue).toLocaleDateString('en-gb', {
+							month: 'short',
+							day: 'numeric'
+						});
 					}
 				}
 			}

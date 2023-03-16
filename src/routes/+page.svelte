@@ -5,6 +5,7 @@
 	import DoseTracker from '$lib/DoseTracker.svelte';
 	import Medications from '$lib/Medications.svelte';
 	import { consumeMedicine } from '$lib/models/consumeMedicine';
+	import { safeDate } from '$lib/models/safeDateTime';
 	import { localStorageOptIn } from '$lib/stores/localStorageOptIn';
 	import { medications as localMedicationsStore } from '$lib/stores/medications';
 	import { trpc } from '$lib/trpc/client';
@@ -18,12 +19,13 @@
 		if (!medication) {
 			return;
 		}
-		//no idea f this will work
+
 		$medications = consumeMedicine($medications, e.detail);
+		$doses = [...$doses, e.detail];
 
 		if (data.idToken) {
 			console.log('sending to server');
-			trpc().addDose.mutate(e.detail);
+			trpc().addDose.mutate({ ...e.detail, dateTime: safeDate(e.detail.dateTime) });
 		}
 	}
 	const loginURL =

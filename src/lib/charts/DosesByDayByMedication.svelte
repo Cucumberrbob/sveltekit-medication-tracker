@@ -13,15 +13,20 @@
 		type ChartData
 	} from 'chart.js';
 	import colors from './colors';
+	import { safeDate } from '$lib/models/safeDateTime';
 
 	Chart.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 	export let doses: Dose[];
 	export let daysToShow: number;
+
+	// number of milliseconds past midnight to count current date as yesterday
+	const excessTimeInDay = 7 * 3_600_000;
+
 	function calculateData(doses: Dose[], daysToShow: number) {
 		const earliestDose = doses.reduce((acc, dose) => {
 			if (dose.dateTime < acc) {
-				return dose.dateTime;
+				return safeDate(dose.dateTime);
 			}
 			return acc;
 		}, new Date());
@@ -32,7 +37,9 @@
 			.fill(0)
 			.map((_, i) => {
 				const date = new Date(
-					+new Date() - 86_400_000 * ((daysToShow || daysSinceEarliestDose) - i - 1)
+					+new Date() -
+						86_400_000 * ((daysToShow || daysSinceEarliestDose) - i - 1) -
+						excessTimeInDay
 				);
 				return date.toISOString().split('T')[0];
 			});
@@ -50,7 +57,9 @@
 		const dosesByMedicineByDay = Object.entries(dosesByMedicine).reduce(
 			(acc, [medicine, doses]) => {
 				acc[medicine] = doses.reduce((acc, dose) => {
-					const date = dose.dateTime.toISOString().split('T')[0];
+					const date = new Date(+safeDate(dose.dateTime) - excessTimeInDay)
+						.toISOString()
+						.split('T')[0];
 					if (!acc[date]) {
 						acc[date] = [];
 					}
