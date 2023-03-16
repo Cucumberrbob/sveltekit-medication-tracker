@@ -4,7 +4,7 @@
 	import '../app.postcss';
 
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
-	import { storePopup } from '@skeletonlabs/skeleton';
+	import { Modal, storePopup } from '@skeletonlabs/skeleton';
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
 
 	import { AppBar, AppShell, LightSwitch, popup } from '@skeletonlabs/skeleton';
@@ -12,6 +12,7 @@
 	import { page } from '$app/stores';
 	import type { LayoutData } from './$types';
 	import { localStorageOptIn } from '$lib/stores/localStorageOptIn';
+	import { slide } from 'svelte/transition';
 
 	export let data: LayoutData;
 
@@ -26,12 +27,14 @@
 	const logoutURL = `https://${PUBLIC_AUTH0_DOMAIN}/v2/logout?client_id=${PUBLIC_AUTH0_CLIENT_ID}&returnTo=${$page.url.origin}/api/logout`;
 </script>
 
-<AppShell
-	slotFooter="border-t-2 border-t-surface-400 dark:border-t-surface-500 flex justify-center"
->
-	<AppBar slotLead="space-x-4 flex align-baseline max-[400px]:flex-col max-[400px]:!items-start">
+<Modal buttonPositive="variant-filled-error" />
+<AppShell>
+	<AppBar slotLead="space-x-4 flex align-baseline">
 		<svelte:fragment slot="lead">
-			<a class="text-xl font-bold" href="/" data-sveltekit-preload-data>Meds Tracker</a>
+			<a class="text-xl font-bold" href="/" data-sveltekit-preload-data>
+				<span class="max-sm:hidden"> Meds Tracker </span>
+				<span class="sm:hidden">🥦</span>
+			</a>
 			{#if data.idToken || $localStorageOptIn}
 				<a href="/stats" data-sveltekit-preload-data>Stats</a>
 			{/if}
@@ -55,12 +58,16 @@
 			{/if}
 		</svelte:fragment>
 	</AppBar>
-	<svelte:fragment slot="footer">
-		<a href="/privacy" data-sveltekit-preload-data class="!text-primary-600 !text-opacity-50"
-			>Privacy Policy</a
-		>
-	</svelte:fragment>
 	<div class="p-4 max-md:p-2">
 		<slot />
 	</div>
+	<svelte:fragment slot="footer">
+		{#if $page.route.id !== '/privacy'}
+			<div class="bg-transparent flex justify-center" transition:slide>
+				<a href="/privacy" data-sveltekit-preload-data class="!text-primary-600 !text-opacity-50"
+					>Privacy Policy</a
+				>
+			</div>
+		{/if}
+	</svelte:fragment>
 </AppShell>

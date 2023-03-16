@@ -38,17 +38,14 @@
 		}
 		state = 'list';
 	}
+	$: maximum = $medications.reduce((acc, curr) => Math.max(acc, curr.initialQuantity.value), 0);
 	let errorFields: Array<'name' | 'quantity'> = [];
 	let formEl: HTMLFormElement;
 </script>
 
-<div class="card p-4 w-96 max-md:w-full">
+<div class="card p-4 w-96 max-md:w-full shadow-2xl">
 	{#if state === 'list'}
-		<div
-			in:fly={{ x: -100, delay: 259, duration: 250 }}
-			out:fly={{ x: -100, duration: 250 }}
-			class="space-y-2 relative h-full"
-		>
+		<div class="space-y-2 relative h-full">
 			<span class="text-xl"> Medication remaining </span>
 			<div class="medications">
 				{#each $medications as medication}
@@ -59,12 +56,17 @@
 							>{medication.quantityRemaining.value}{medication.quantityRemaining.unit}/{medication
 								.initialQuantity.value}{medication.initialQuantity.unit}</span
 						>
-						<div class="col-span-full my-2">
-							<ProgressBar
-								value={medication.quantityRemaining.value}
-								meter="bg-primary-400-500-token transition-[width]"
-								max={medication.initialQuantity.value}
-							/>
+						<div class="col-span-full my-2 text-left ">
+							<div
+								class=" w-full"
+								style={`width: ${(100 * medication.quantityRemaining.value) / maximum}%`}
+							>
+								<ProgressBar
+									value={medication.quantityRemaining.value}
+									meter="bg-primary-400-500-token transition-[width]"
+									max={medication.initialQuantity.value}
+								/>
+							</div>
 						</div>
 					</div>
 				{/each}
@@ -80,11 +82,7 @@
 			</div>
 		</div>
 	{:else}
-		<div
-			in:fly={{ x: -100, delay: 259, duration: 250 }}
-			out:fly={{ x: -100, duration: 250 }}
-			class="space-y-2"
-		>
+		<div class="space-y-2">
 			<div class="grid w-full grid-cols-[1fr_auto]">
 				<span class="text-xl my-auto"> Add Medication </span>
 				<button class="btn text-surface-500-400-token" on:click={() => (state = 'list')}>

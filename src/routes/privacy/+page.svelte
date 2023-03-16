@@ -1,5 +1,47 @@
+<script lang="ts">
+	import { trpc } from '$lib/trpc/client';
+	import { modalStore } from '@skeletonlabs/skeleton';
+	import type { PageData } from './$types';
+	export let data: PageData;
+	async function download() {
+		const trpcClient = trpc();
+		const [medications, doses] = await Promise.all([
+			trpcClient.medications.query(),
+			trpcClient.doses.query()
+		]);
+		downloadTextFile(JSON.stringify(medications), 'medications.json');
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		downloadTextFile(JSON.stringify(doses), 'doses.json');
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		downloadTextFile(JSON.stringify(data.idToken), 'idToken.json');
+	}
+	function downloadTextFile(text: string, name: string) {
+		const a = document.createElement('a');
+		const type = name.split('.').pop();
+		a.href = URL.createObjectURL(
+			new Blob([text], { type: `text/${type === 'txt' ? 'plain' : type}` })
+		);
+		a.download = name;
+		a.click();
+	}
+
+	async function deleteAllData() {
+		modalStore.trigger({
+			type: 'confirm',
+			title: 'Delete all data?',
+			buttonTextConfirm: 'Delete',
+			body: 'Are you sure you want to delete all your data? This cannot be undone. Currently this will not delete your user on Auth0',
+			async response(s) {
+				if (!s) return;
+				const trpcClient = trpc();
+				await trpcClient.deleteAllData.mutate();
+			}
+		});
+	}
+</script>
+
 <div class="w-full flex flex-col items-center">
-	<div class="card p-4 space-y-4 shadow-2xl">
+	<div class="card p-4 space-y-4 shadow-2xl sm:!max-w-full">
 		<h1 class="">Privacy Policy</h1>
 
 		<div class=" prose text-inherit ">
@@ -32,13 +74,14 @@
 				You can request that all your data is deleted by clicking on your username in the top right.
 				In local mode, this is where the login button would be.
 			</p>
-			<p>
-				You'll find the option to request all the data we hold on you in the same place. We only
-				share a small amount of data with our Identity Provider, Auth0. We <span class="font-bold">
-					do not
-				</span> collect your name, phone number, or require verification of your email (although using
-				a fake one will not allow you to reset your password).
-			</p>
+			<div class="flex w-full max-sm:flex-col max-sm:space-y-4 justify-between">
+				<button class="btn variant-ghost-error" on:click={deleteAllData}>
+					Delete all your data
+				</button>
+				<button class="btn variant-filled-primary" on:click={download}>
+					Download all your data
+				</button>
+			</div>
 		</div>
 	</div>
 </div>
