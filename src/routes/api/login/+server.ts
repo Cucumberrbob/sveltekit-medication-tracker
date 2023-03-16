@@ -43,8 +43,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		path: '/',
 		domain: url.hostname,
 		sameSite: 'lax',
-		secure: !dev,
-		expires: new Date(+new Date() + 24 * 60 * 60 * 1000)
+		secure: !dev && url.hostname !== 'http://localhost',
+		// expires: new Date(+new Date() + 24 * 60 * 60 * 1000),
+		maxAge: 24 * 60 * 60
 	});
 	throw redirect(303, '/');
 };
