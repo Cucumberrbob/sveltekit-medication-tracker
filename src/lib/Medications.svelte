@@ -39,6 +39,7 @@
 		state = 'list';
 	}
 	$: maximum = $medications.reduce((acc, curr) => Math.max(acc, curr.initialQuantity.value), 0);
+	$: console.log(maximum);
 	let errorFields: Array<'name' | 'quantity'> = [];
 	let formEl: HTMLFormElement;
 </script>
@@ -59,7 +60,7 @@
 						<div class="col-span-full my-2 text-left ">
 							<div
 								class=" w-full"
-								style={`width: ${(100 * medication.quantityRemaining.value) / maximum}%`}
+								style={`width: ${(100 * medication.initialQuantity.value) / maximum}%`}
 							>
 								<ProgressBar
 									value={medication.quantityRemaining.value}
@@ -97,7 +98,12 @@
 			>
 				<label for="medication-name">
 					<span>Medication Name</span>
-					<MedicationDropdown selected={undefined} name="medication-name" options={$medications} />
+					<MedicationDropdown
+						selected={undefined}
+						name="medication-name"
+						options={$medications}
+						hasError={errorFields.includes('name')}
+					/>
 				</label>
 				<label for="quantity">
 					<span>Quantity</span>
@@ -108,7 +114,7 @@
 						<input
 							type="number"
 							inputmode="numeric"
-							class="!appearance-none !m-0"
+							class="!appearance-none !m-0 focus:outline-0 focus:ring-0"
 							name="quantity"
 							placeholder="Enter Quantity..."
 						/>

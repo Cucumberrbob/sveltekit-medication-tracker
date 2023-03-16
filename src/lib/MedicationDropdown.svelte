@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { popup } from '@skeletonlabs/skeleton';
+	import { filter, popup } from '@skeletonlabs/skeleton';
 	import type { Medication } from '../app';
 
 	// Props
@@ -29,7 +29,9 @@
 	/** Provide classes for border radius styles */
 	export let rounded = 'rounded-12';
 	/** Provide classes for the input */
-	export let input = 'input input-select';
+	export let input = 'input input-select focus:!outline-0';
+	/** Whether to show error state */
+	export let hasError = false;
 
 	const cOption = 'py-1 my-1 w-full';
 
@@ -106,7 +108,7 @@
 	$: classesMenu = `${rounded} ${regionMenu} ${padding} ${background} ${border}`;
 	$: classesOption = `${rounded} ${cOption} ${option} ${padding}`;
 	$: classesOptionFocus = `${optionFocus}`;
-	$: classesInput = `${input} ${rounded} ${background} `;
+	$: classesInput = `${input} ${rounded} ${background} ${hasError ? 'input-error' : ''}`;
 </script>
 
 <div class="relative {width}">
@@ -156,6 +158,7 @@
 		aria-expanded={menuExpanded}
 		aria-controls={name}
 		class="select-menu {classesMenu}"
+		class:!hidden={filteredOptions.length === 0}
 	>
 		{#if filteredOptions.length > 0}
 			{#each filteredOptions as option, i (option.name)}

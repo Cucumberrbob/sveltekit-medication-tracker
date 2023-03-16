@@ -42,7 +42,12 @@
 	<span class="text-xl">Log a dose</span>
 	<label for="name">
 		<span>Medication Name</span>
-		<MedicationDropdown options={$medications} name="name" selected={undefined} />
+		<MedicationDropdown
+			options={$medications}
+			name="name"
+			selected={undefined}
+			hasError={errorFields.includes('name')}
+		/>
 	</label>
 	<label for="quantity">
 		<span>Quantity</span>
@@ -53,7 +58,7 @@
 			<input
 				type="number"
 				step="0.01"
-				class="!appearance-none !m-0"
+				class="!appearance-none !m-0 focus:outline-0 focus:ring-0"
 				on:input={() => (errorFields = errorFields.filter((f) => f !== 'quantity'))}
 				name="quantity"
 				placeholder="Enter Quantity..."
