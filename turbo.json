@@ -9,6 +9,9 @@
 		},
 		"deploy": {
 			"dependsOn": ["build"]
+		},
+		"preview": {
+			"dependsOn": ["build"]
 		}
 	}
 }
